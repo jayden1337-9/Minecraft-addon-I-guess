@@ -1,0 +1,28 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "arcane:storm_spear"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      "  I",
+      " S ",
+      "S  "
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:lightning_rod"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "result": {
+      "item": "arcane:storm_spear",
+      "count": 1
+    }
+  }
+}

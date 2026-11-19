@@ -1,0 +1,31 @@
+{
+  "format_version": "1.20.10",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "arcane:void_dagger"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " O ",
+      " N ",
+      " S "
+    ],
+    "key": {
+      "O": {
+        "item": "minecraft:obsidian"
+      },
+      "N": {
+        "item": "minecraft:ender_pearl"
+      },
+      "S": {
+        "item": "minecraft:stick"
+      }
+    },
+    "result": {
+      "item": "arcane:void_dagger",
+      "count": 1
+    }
+  }
+}

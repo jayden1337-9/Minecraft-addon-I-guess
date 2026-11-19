@@ -1,0 +1,60 @@
+name: Build Arcane Arsenal
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate JSON
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          files = list(Path("behavior_pack").rglob("*.json"))
+          files += list(Path("resource_pack").rglob("*.json"))
+
+          for file in files:
+              json.loads(file.read_text())
+
+          print(f"Validated {len(files)} JSON files")
+          PY
+
+      - name: Generate textures
+        run: python tools/generate_textures.py
+
+      - name: Build packs
+        run: |
+          mkdir -p dist
+
+          cd behavior_pack
+          zip -qr ../dist/ArcaneArsenal_BP.mcpack .
+          cd ..
+
+          cd resource_pack
+          zip -qr ../dist/ArcaneArsenal_RP.mcpack .
+          cd ..
+
+          cd dist
+          zip -q ArcaneArsenal.mcaddon \
+            ArcaneArsenal_BP.mcpack \
+            ArcaneArsenal_RP.mcpack
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Arcane-Arsenal
+          path: dist/*
+          if-no-files-found: error

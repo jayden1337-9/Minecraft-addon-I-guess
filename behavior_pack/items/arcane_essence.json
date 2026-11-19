@@ -1,0 +1,20 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:item": {
+    "description": {
+      "identifier": "arcane:arcane_essence"
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "arcane_essence"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "Arcane Essence"
+      },
+      "minecraft:max_stack_size": 64,
+      "minecraft:hand_equipped": false
+    }
+  }
+}

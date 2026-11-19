@@ -1,0 +1,17 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Arcane Arsenal RP",
+    "description": "Textures for Arcane Arsenal",
+    "uuid": "d2f6b841-9c35-4a70-b1e8-5f3d2a906714",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 0]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "e5a7c932-1b64-4f80-a3d9-7c2e5b106843",
+      "version": [1, 0, 0]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:item": {
+    "description": {
+      "identifier": "arcane:ember_blade"
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "ember_blade"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "Ember Blade"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:hand_equipped": true
+    }
+  }
+}
