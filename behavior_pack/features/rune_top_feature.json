@@ -1,0 +1,10 @@
+{
+  "format_version": "1.13.0",
+  "minecraft:single_block_feature": {
+    "description": {
+      "identifier": "arcane:rune_top_feature"
+    },
+    "places_block": "arcane:rune_stone",
+    "enforce_placement_rules": true
+  }
+}

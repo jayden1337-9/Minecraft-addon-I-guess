@@ -1,7 +1,4 @@
-item.arcane:ember_blade.name=Ember Blade
-item.arcane:storm_spear.name=Storm Spear
-item.arcane:void_dagger.name=Void Dagger
-item.arcane:gravity_maul.name=Gravity Maul
-item.arcane:lifebloom_staff.name=Lifebloom Staff
-item.arcane:arcane_essence.name=Arcane Essence
-item.arcane:mana_crystal.name=Mana Crystal
+item.arcane:rune_stone.name=Rune Stone
+tile.arcane:arcane_crystal_ore.name=Arcane Crystal Ore
+tile.arcane:rune_stone.name=Rune Stone
+entity.arcane:riftling.name=Riftling

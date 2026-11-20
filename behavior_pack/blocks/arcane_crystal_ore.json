@@ -1,0 +1,21 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:block": {
+    "description": {
+      "identifier": "arcane:arcane_crystal_ore"
+    },
+    "components": {
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 3
+      },
+      "minecraft:map_color": "#7446B8",
+      "minecraft:loot": "loot_tables/blocks/arcane_crystal_ore.json",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "arcane_crystal_ore",
+          "render_method": "opaque"
+        }
+      }
+    }
+  }
+}

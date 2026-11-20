@@ -2,12 +2,29 @@
   "resource_pack_name": "Arcane Arsenal",
   "texture_name": "atlas.items",
   "texture_data": {
-    "ember_blade": {"textures": "textures/items/ember_blade"},
-    "storm_spear": {"textures": "textures/items/storm_spear"},
-    "void_dagger": {"textures": "textures/items/void_dagger"},
-    "gravity_maul": {"textures": "textures/items/gravity_maul"},
-    "lifebloom_staff": {"textures": "textures/items/lifebloom_staff"},
-    "arcane_essence": {"textures": "textures/items/arcane_essence"},
-    "mana_crystal": {"textures": "textures/items/mana_crystal"}
+    "ember_blade": {
+      "textures": "textures/items/ember_blade"
+    },
+    "storm_spear": {
+      "textures": "textures/items/storm_spear"
+    },
+    "void_dagger": {
+      "textures": "textures/items/void_dagger"
+    },
+    "gravity_maul": {
+      "textures": "textures/items/gravity_maul"
+    },
+    "lifebloom_staff": {
+      "textures": "textures/items/lifebloom_staff"
+    },
+    "arcane_essence": {
+      "textures": "textures/items/arcane_essence"
+    },
+    "mana_crystal": {
+      "textures": "textures/items/mana_crystal"
+    },
+    "rune_stone": {
+      "textures": "textures/items/rune_stone"
+    }
   }
 }

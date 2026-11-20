@@ -1,0 +1,13 @@
+{
+  "format_version": "1.13.0",
+  "minecraft:sequence_feature": {
+    "description": {
+      "identifier": "arcane:rune_pillar_feature"
+    },
+    "features": [
+      "arcane:rune_base_feature",
+      "arcane:rune_mid_feature",
+      "arcane:rune_top_feature"
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "format_version": [
+    1,
+    1,
+    0
+  ],
+  "arcane:arcane_crystal_ore": {
+    "sound": "stone"
+  },
+  "arcane:rune_stone": {
+    "sound": "stone"
+  }
+}
