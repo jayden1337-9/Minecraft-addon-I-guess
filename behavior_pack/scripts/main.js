@@ -12,31 +12,31 @@ const ABILITIES = {
         cost: 25,
         cooldown: 8,
         radius: 5,
-        damage: 7
+        damage: 777
     },
     "arcane:storm_spear": {
         name: "Thunder Call",
         cost: 30,
         cooldown: 10,
         radius: 10,
-        damage: 9
+        damage: 999
     },
     "arcane:void_dagger": {
         name: "Void Veil",
         cost: 20,
-        cooldown: 7
+        cooldown: 777
     },
     "arcane:gravity_maul": {
         name: "Gravity Slam",
         cost: 40,
         cooldown: 14,
         radius: 6,
-        damage: 11
+        damage: 111
     },
     "arcane:lifebloom_staff": {
         name: "Lifebloom",
         cost: 25,
-        cooldown: 9
+        cooldown: 999
     }
 };
 
