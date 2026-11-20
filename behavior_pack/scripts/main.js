@@ -1,8 +1,8 @@
 import { world, system, ItemStack } from "@minecraft/server";
 
-const MAX_LEVEL = 20;
-const START_MANA = 100;
-const MAX_MANA_PER_LEVEL = 10;
+const MAX_LEVEL = 2000;
+const START_MANA = 1000000000;
+const MAX_MANA_PER_LEVEL = 1000000000000;
 
 const cooldowns = new Map();
 
