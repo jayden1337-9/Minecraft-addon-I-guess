@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -17,44 +17,103 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate JSON
+      - name: Validate source files
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
 
+          bp = json.loads(Path("behavior_pack/manifest.json").read_text())
+          rp = json.loads(Path("resource_pack/manifest.json").read_text())
+          assert bp["header"]["uuid"] != rp["header"]["uuid"]
+          assert any(m.get("type") == "script" for m in bp["modules"])
+          assert any(m.get("type") == "resources" for m in rp["modules"])
+
           files = list(Path("behavior_pack").rglob("*.json"))
           files += list(Path("resource_pack").rglob("*.json"))
-
           for file in files:
               json.loads(file.read_text())
 
           print(f"Validated {len(files)} JSON files")
           PY
 
+      - name: Check JavaScript syntax
+        run: node --input-type=module --check < behavior_pack/scripts/main.js
+
       - name: Generate textures
         run: python tools/generate_textures.py
 
-      - name: Build packs
+      - name: Build and verify Minecraft packages
         run: |
-          mkdir -p dist
+          set -euo pipefail
+          rm -rf dist package
+          mkdir -p dist package/ArcaneArsenal_BP package/ArcaneArsenal_RP
 
-          cd behavior_pack
-          zip -qr ../dist/ArcaneArsenal_BP.mcpack .
-          cd ..
+          cp -a behavior_pack/. package/ArcaneArsenal_BP/
+          cp -a resource_pack/. package/ArcaneArsenal_RP/
 
-          cd resource_pack
-          zip -qr ../dist/ArcaneArsenal_RP.mcpack .
-          cd ..
+          # A .mcpack is a ZIP with manifest.json at its root.
+          (cd behavior_pack && zip -qr ../dist/ArcaneArsenal_BP.mcpack .)
+          (cd resource_pack && zip -qr ../dist/ArcaneArsenal_RP.mcpack .)
 
-          cd dist
-          zip -q ArcaneArsenal.mcaddon \
-            ArcaneArsenal_BP.mcpack \
-            ArcaneArsenal_RP.mcpack
+          # A .mcaddon contains the behavior-pack and resource-pack folders.
+          (cd package && zip -qr ../dist/ArcaneArsenal.mcaddon ArcaneArsenal_BP ArcaneArsenal_RP)
 
-      - name: Upload build artifacts
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          checks = {
+              "dist/ArcaneArsenal_BP.mcpack": "manifest.json",
+              "dist/ArcaneArsenal_RP.mcpack": "manifest.json",
+          }
+          for archive, required in checks.items():
+              with ZipFile(archive) as z:
+                  assert required in z.namelist(), f"{archive}: missing root {required}"
+                  bad = z.testzip()
+                  assert bad is None, f"{archive}: corrupt member {bad}"
+
+          with ZipFile("dist/ArcaneArsenal.mcaddon") as z:
+              names = set(z.namelist())
+              assert "ArcaneArsenal_BP/manifest.json" in names
+              assert "ArcaneArsenal_RP/manifest.json" in names
+              bad = z.testzip()
+              assert bad is None, f"mcaddon: corrupt member {bad}"
+
+          print("All three Minecraft packages passed archive-structure checks.")
+          PY
+
+      # Each file is a separate Actions artifact. GitHub downloads each
+      # artifact as a ZIP wrapper containing only the named Minecraft file.
+      - name: Upload behavior pack
         uses: actions/upload-artifact@v4
         with:
-          name: Arcane-Arsenal
-          path: dist/*
+          name: ArcaneArsenal-BP-mcpack
+          path: dist/ArcaneArsenal_BP.mcpack
           if-no-files-found: error
+
+      - name: Upload resource pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: ArcaneArsenal-RP-mcpack
+          path: dist/ArcaneArsenal_RP.mcpack
+          if-no-files-found: error
+
+      - name: Upload combined addon
+        uses: actions/upload-artifact@v4
+        with:
+          name: ArcaneArsenal-mcaddon
+          path: dist/ArcaneArsenal.mcaddon
+          if-no-files-found: error
+
+      # Release assets are the raw .mcpack/.mcaddon files, so Android can
+      # download the actual extension instead of an Actions ZIP wrapper.
+      - name: Publish direct-download release assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/ArcaneArsenal_BP.mcpack
+            dist/ArcaneArsenal_RP.mcpack
+            dist/ArcaneArsenal.mcaddon
