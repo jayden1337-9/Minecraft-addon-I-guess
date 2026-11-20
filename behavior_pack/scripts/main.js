@@ -295,4 +295,51 @@ system.runInterval(() => {
     }
 }, 20);
 
+
+ // Show mob health while a player is looking directly at it.
+const healthNameTags = new Map();
+
+system.runInterval(() => {
+    const currentlyViewed = new Map();
+
+    for (const player of world.getAllPlayers()) {
+        try {
+            const hits = player.getEntitiesFromViewDirection({ maxDistance: 32 });
+            const target = hits.length > 0 ? hits[0].entity : undefined;
+            if (!target || target.typeId === "minecraft:player") continue;
+
+            const health = target.getComponent("minecraft:health");
+            if (!health) continue;
+
+            const current = Math.max(0, Math.ceil(health.currentValue));
+            const maximum = Math.ceil(health.effectiveMax || health.defaultValue || current);
+            currentlyViewed.set(target.id, { entity: target, current, maximum });
+        } catch {}
+    }
+
+    for (const [id, saved] of healthNameTags) {
+        if (!currentlyViewed.has(id)) {
+            try { saved.entity.nameTag = saved.originalNameTag; } catch {}
+            healthNameTags.delete(id);
+        }
+    }
+
+    for (const [id, viewed] of currentlyViewed) {
+        try {
+            let saved = healthNameTags.get(id);
+            if (!saved) {
+                saved = { entity: viewed.entity, originalNameTag: viewed.entity.nameTag };
+                healthNameTags.set(id, saved);
+            }
+
+            const mobName = saved.originalNameTag || viewed.entity.typeId
+                .replace("minecraft:", "")
+                .replaceAll("_", " ");
+            viewed.entity.nameTag =
+                `§f${mobName}\n§c❤ §f${viewed.current}§7/§f${viewed.maximum}`;
+        } catch {}
+    }
+}, 5);
+
 console.warn("[Arcane Arsenal] Gameplay system loaded.");
+
