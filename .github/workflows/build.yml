@@ -117,3 +117,28 @@ jobs:
             dist/ArcaneArsenal_BP.mcpack
             dist/ArcaneArsenal_RP.mcpack
             dist/ArcaneArsenal.mcaddon
+
+  build-fabric:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.8.2'
+      - name: Build Fabric mod
+        working-directory: java-fabric
+        run: gradle build
+      - name: Upload Fabric mod JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: ArcaneArsenal-Fabric-JAR
+          path: java-fabric/build/libs/*.jar
+          if-no-files-found: error
+          compression-level: 0
