@@ -85,15 +85,12 @@ jobs:
       - name: Build and verify Minecraft packages
         run: |
           set -euo pipefail
-          rm -rf dist package
-          mkdir -p dist package/ArcaneArsenal_BP package/ArcaneArsenal_RP
-
-          cp -a behavior_pack/. package/ArcaneArsenal_BP/
-          cp -a resource_pack/. package/ArcaneArsenal_RP/
+          rm -rf dist
+          mkdir -p dist
 
           (cd behavior_pack && zip -qr ../dist/ArcaneArsenal_BP.mcpack .)
           (cd resource_pack && zip -qr ../dist/ArcaneArsenal_RP.mcpack .)
-          (cd package && zip -qr ../dist/ArcaneArsenal.mcaddon ArcaneArsenal_BP ArcaneArsenal_RP)
+          (cd dist && zip -q ArcaneArsenal.mcaddon ArcaneArsenal_BP.mcpack ArcaneArsenal_RP.mcpack)
 
           python - <<'PY'
           from zipfile import ZipFile

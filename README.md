@@ -26,7 +26,7 @@ A Minecraft Bedrock add-on with custom arcane weapons, mana, progression, abilit
 
 ## Build locally
 
-Run `python tools/generate_textures.py`, then package the contents of `behavior_pack` and `resource_pack` as individual ZIP files with the `.mcpack` extension. The combined `.mcaddon` contains the two pack directories.
+Run `python tools/generate_textures.py`, then package the contents of `behavior_pack` and `resource_pack` as individual ZIP files with the `.mcpack` extension. The combined `.mcaddon` contains the two `.mcpack` files at its root, which is the expected import structure.
 
 The GitHub Actions workflow validates pack JSON, cross-checks item and block texture references, checks the JavaScript syntax, generates textures, verifies archive structure, and uploads each package as its own artifact.
 
