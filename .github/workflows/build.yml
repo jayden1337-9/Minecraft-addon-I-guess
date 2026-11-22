@@ -44,7 +44,7 @@ jobs:
               identifier = item["description"]["identifier"].split(":", 1)[1]
               icon = item["components"]["minecraft:icon"]["textures"]["default"]
               assert icon in item_atlas, f"{path}: missing item atlas entry {icon}"
-              texture_path = rp_root / "textures" / item_atlas[icon]["textures"]
+              texture_path = rp_root / item_atlas[icon]["textures"]
               assert texture_path.with_suffix(".png").is_file(), f"{path}: missing texture {texture_path}.png"
 
           for path in (bp_root / "blocks").glob("*.json"):
@@ -52,7 +52,7 @@ jobs:
               identifier = block["description"]["identifier"].split(":", 1)[1]
               material = block["components"]["minecraft:material_instances"]["*"]["texture"]
               assert material in terrain_atlas, f"{path}: missing terrain atlas entry {material}"
-              texture_path = rp_root / "textures" / terrain_atlas[material]["textures"]
+              texture_path = rp_root / terrain_atlas[material]["textures"]
               assert texture_path.with_suffix(".png").is_file(), f"{path}: missing texture {texture_path}.png"
 
           feature_ids = set()
