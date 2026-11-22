@@ -10,6 +10,9 @@
       },
       "minecraft:map_color": "#7446B8",
       "minecraft:loot": "loot_tables/blocks/arcane_crystal_ore.json",
+      "minecraft:menu_category": {
+        "category": "nature"
+      },
       "minecraft:material_instances": {
         "*": {
           "texture": "arcane_crystal_ore",

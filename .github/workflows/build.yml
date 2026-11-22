@@ -17,24 +17,63 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate source files
+      - name: Validate Bedrock packs
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
 
-          bp = json.loads(Path("behavior_pack/manifest.json").read_text())
-          rp = json.loads(Path("resource_pack/manifest.json").read_text())
+          bp_root = Path("behavior_pack")
+          rp_root = Path("resource_pack")
+          bp = json.loads((bp_root / "manifest.json").read_text())
+          rp = json.loads((rp_root / "manifest.json").read_text())
+
           assert bp["header"]["uuid"] != rp["header"]["uuid"]
           assert any(m.get("type") == "script" for m in bp["modules"])
           assert any(m.get("type") == "resources" for m in rp["modules"])
+          assert any(d.get("module_name") == "@minecraft/server" for d in bp.get("dependencies", []))
 
-          files = list(Path("behavior_pack").rglob("*.json"))
-          files += list(Path("resource_pack").rglob("*.json"))
-          for file in files:
-              json.loads(file.read_text())
+          json_files = list(bp_root.rglob("*.json")) + list(rp_root.rglob("*.json"))
+          documents = {p: json.loads(p.read_text()) for p in json_files}
 
-          print(f"Validated {len(files)} JSON files")
+          item_atlas = documents[rp_root / "textures/item_texture.json"]["texture_data"]
+          terrain_atlas = documents[rp_root / "textures/terrain_texture.json"]["texture_data"]
+
+          for path in (bp_root / "items").glob("*.json"):
+              item = documents[path]["minecraft:item"]
+              identifier = item["description"]["identifier"].split(":", 1)[1]
+              icon = item["components"]["minecraft:icon"]["textures"]["default"]
+              assert icon in item_atlas, f"{path}: missing item atlas entry {icon}"
+              texture_path = rp_root / "textures" / item_atlas[icon]["textures"]
+              assert texture_path.with_suffix(".png").is_file(), f"{path}: missing texture {texture_path}.png"
+
+          for path in (bp_root / "blocks").glob("*.json"):
+              block = documents[path]["minecraft:block"]
+              identifier = block["description"]["identifier"].split(":", 1)[1]
+              material = block["components"]["minecraft:material_instances"]["*"]["texture"]
+              assert material in terrain_atlas, f"{path}: missing terrain atlas entry {material}"
+              texture_path = rp_root / "textures" / terrain_atlas[material]["textures"]
+              assert texture_path.with_suffix(".png").is_file(), f"{path}: missing texture {texture_path}.png"
+
+          feature_ids = set()
+          for path in (bp_root / "features").glob("*.json"):
+              data = documents[path]
+              for component in data.values():
+                  if isinstance(component, dict) and "description" in component:
+                      feature_ids.add(component["description"]["identifier"])
+
+          for path in (bp_root / "feature_rules").glob("*.json"):
+              rule = documents[path]["minecraft:feature_rules"]["description"]
+              assert rule["places_feature"] in feature_ids, f"{path}: unknown feature {rule['places_feature']}"
+
+          for path in (bp_root / "entities").glob("*.json"):
+              entity = documents[path]["minecraft:entity"]["description"]["identifier"]
+              client_path = rp_root / "entity" / (path.stem + ".entity.json")
+              assert client_path.is_file(), f"{path}: missing client entity"
+              client = json.loads(client_path.read_text())
+              assert client["minecraft:client_entity"]["description"]["identifier"] == entity
+
+          print(f"Validated {len(json_files)} Bedrock JSON files and all item, block, feature, and entity references.")
           PY
 
       - name: Check JavaScript syntax
@@ -52,15 +91,11 @@ jobs:
           cp -a behavior_pack/. package/ArcaneArsenal_BP/
           cp -a resource_pack/. package/ArcaneArsenal_RP/
 
-          # A .mcpack is a ZIP with manifest.json at its root.
           (cd behavior_pack && zip -qr ../dist/ArcaneArsenal_BP.mcpack .)
           (cd resource_pack && zip -qr ../dist/ArcaneArsenal_RP.mcpack .)
-
-          # A .mcaddon contains the behavior-pack and resource-pack folders.
           (cd package && zip -qr ../dist/ArcaneArsenal.mcaddon ArcaneArsenal_BP ArcaneArsenal_RP)
 
           python - <<'PY'
-          from pathlib import Path
           from zipfile import ZipFile
 
           checks = {
@@ -83,8 +118,6 @@ jobs:
           print("All three Minecraft packages passed archive-structure checks.")
           PY
 
-      # Each file is a separate Actions artifact. GitHub downloads each
-      # artifact as a ZIP wrapper containing only the named Minecraft file.
       - name: Upload behavior pack
         uses: actions/upload-artifact@v4
         with:
@@ -106,8 +139,6 @@ jobs:
           path: dist/ArcaneArsenal.mcaddon
           if-no-files-found: error
 
-      # Release assets are the raw .mcpack/.mcaddon files, so Android can
-      # download the actual extension instead of an Actions ZIP wrapper.
       - name: Publish direct-download release assets
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2

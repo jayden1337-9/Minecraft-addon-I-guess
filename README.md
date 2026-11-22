@@ -1,6 +1,15 @@
 # Arcane Arsenal
 
-A Minecraft Bedrock add-on with custom arcane items, mana, progression, and abilities.
+A Minecraft Bedrock add-on with custom arcane weapons, mana, progression, abilities, crystal ore, rune stone and the Riftling.
+
+## Features
+
+- Five usable magical weapons with unique abilities.
+- Mana that regenerates over time, plus Mana Crystals for recovery.
+- Up to 2,000 progression levels, with XP from defeating mobs and consuming Arcane Essence.
+- Arcane Crystal Ore in the Overworld underground.
+- Rune Stone surface deposits in the Overworld.
+- The Riftling hostile mob, with its own spawn rules and loot.
 
 ## Download
 
@@ -19,8 +28,8 @@ A Minecraft Bedrock add-on with custom arcane items, mana, progression, and abil
 
 Run `python tools/generate_textures.py`, then package the contents of `behavior_pack` and `resource_pack` as individual ZIP files with the `.mcpack` extension. The combined `.mcaddon` contains the two pack directories.
 
-The GitHub Actions workflow validates JSON and JavaScript syntax, generates textures, verifies archive structure, uploads each package as its own artifact, and publishes raw package files as release assets when a `v*` tag is pushed.
+The GitHub Actions workflow validates pack JSON, cross-checks item and block texture references, checks the JavaScript syntax, generates textures, verifies archive structure, and uploads each package as its own artifact.
 
 ## Compatibility note
 
-The workflow verifies packaging and static syntax. Minecraft-version-specific Script API behavior still needs an in-game test on the target Bedrock version.
+The workflow verifies packaging, JSON structure, cross-pack references, and JavaScript syntax. Minecraft-version-specific Script API behavior still needs an in-game test on the target Bedrock version.

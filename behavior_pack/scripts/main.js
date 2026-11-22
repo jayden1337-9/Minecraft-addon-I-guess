@@ -1,8 +1,8 @@
 import { world, system, ItemStack } from "@minecraft/server";
 
 const MAX_LEVEL = 2000;
-const START_MANA = 1000000000;
-const MAX_MANA_PER_LEVEL = 1000000000000;
+const START_MANA = 100;
+const MANA_PER_LEVEL = 25;
 
 const cooldowns = new Map();
 
@@ -12,49 +12,49 @@ const ABILITIES = {
         cost: 25,
         cooldown: 8,
         radius: 5,
-        damage: 777
+        damage: 14
     },
     "arcane:storm_spear": {
         name: "Thunder Call",
         cost: 30,
         cooldown: 10,
         radius: 10,
-        damage: 999
+        damage: 18
     },
     "arcane:void_dagger": {
         name: "Void Veil",
         cost: 20,
-        cooldown: 777
+        cooldown: 12
     },
     "arcane:gravity_maul": {
         name: "Gravity Slam",
         cost: 40,
         cooldown: 14,
         radius: 6,
-        damage: 111
+        damage: 12
     },
     "arcane:lifebloom_staff": {
         name: "Lifebloom",
         cost: 25,
-        cooldown: 999
+        cooldown: 18
     }
 };
 
 function getNumber(player, key, fallback = 0) {
     const value = player.getDynamicProperty(key);
-    return typeof value === "number" ? value : fallback;
+    return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
 function level(player) {
-    return Math.min(MAX_LEVEL, Math.max(1, getNumber(player, "arcane:level", 1)));
+    return Math.floor(Math.min(MAX_LEVEL, Math.max(1, getNumber(player, "arcane:level", 1))));
 }
 
 function maxMana(player) {
-    return START_MANA + (level(player) - 1) * MAX_MANA_PER_LEVEL;
+    return START_MANA + (level(player) - 1) * MANA_PER_LEVEL;
 }
 
 function mana(player) {
-    return Math.min(maxMana(player), getNumber(player, "arcane:mana", START_MANA));
+    return Math.min(maxMana(player), Math.max(0, getNumber(player, "arcane:mana", START_MANA)));
 }
 
 function xpNeeded(currentLevel) {
@@ -79,7 +79,7 @@ function giveXP(player, amount) {
         currentLevel++;
 
         player.setDynamicProperty("arcane:level", currentLevel);
-        player.setDynamicProperty("arcane:mana", START_MANA + (currentLevel - 1) * MAX_MANA_PER_LEVEL);
+        player.setDynamicProperty("arcane:mana", maxMana(player));
 
         player.sendMessage(
             `§6§lARCANE LEVEL UP! §r§eLevel ${currentLevel} reached!`
@@ -92,9 +92,8 @@ function giveXP(player, amount) {
 }
 
 function nearbyEntities(player, radius) {
-    const location = player.location;
     return player.dimension.getEntities({
-        location,
+        location: player.location,
         maxDistance: radius
     }).filter(entity =>
         entity.id !== player.id &&
@@ -104,25 +103,37 @@ function nearbyEntities(player, radius) {
 
 function consumeOne(player, typeId) {
     const inventory = player.getComponent("minecraft:inventory");
-    if (!inventory || !inventory.container) return false;
-
-    const container = inventory.container;
+    const container = inventory?.container;
+    if (!container) return false;
 
     for (let i = 0; i < container.size; i++) {
         const stack = container.getItem(i);
+        if (!stack || stack.typeId !== typeId) continue;
 
-        if (stack && stack.typeId === typeId) {
-            if (stack.amount > 1) {
-                stack.amount -= 1;
-                container.setItem(i, stack);
-            } else {
-                container.setItem(i, undefined);
-            }
-            return true;
+        if (stack.amount > 1) {
+            container.setItem(i, new ItemStack(typeId, stack.amount - 1));
+        } else {
+            container.setItem(i, undefined);
         }
+        return true;
     }
 
     return false;
+}
+
+function safelyDamage(entity, amount) {
+    try {
+        entity.applyDamage(amount);
+    } catch {}
+}
+
+function safelyAddEffect(entity, effect, duration, amplifier = 0, particles = true) {
+    try {
+        entity.addEffect(effect, duration, {
+            amplifier,
+            showParticles: particles
+        });
+    } catch {}
 }
 
 function useAbility(player, itemId) {
@@ -134,8 +145,7 @@ function useAbility(player, itemId) {
     const ready = cooldowns.get(key) || 0;
 
     if (now < ready) {
-        const left = ((ready - now) / 20).toFixed(1);
-        player.sendMessage(`§cCooling down: ${left}s`);
+        player.sendMessage(`§cCooling down: ${((ready - now) / 20).toFixed(1)}s`);
         return;
     }
 
@@ -147,73 +157,43 @@ function useAbility(player, itemId) {
     setMana(player, mana(player) - ability.cost);
     cooldowns.set(key, now + ability.cooldown * 20);
 
-    const power = 1 + (level(player) - 1) * 0.04;
+    // Progression improves abilities gradually without extreme damage scaling.
+    const power = 1 + Math.log2(level(player)) * 0.35;
 
     if (itemId === "arcane:ember_blade") {
         for (const entity of nearbyEntities(player, ability.radius)) {
-            entity.applyDamage(Math.round(ability.damage * power));
+            safelyDamage(entity, Math.round(ability.damage * power));
         }
         player.sendMessage("§6Flame Nova unleashed!");
-    }
-
-    if (itemId === "arcane:storm_spear") {
+    } else if (itemId === "arcane:storm_spear") {
         const direction = player.getViewDirection();
 
         for (const entity of nearbyEntities(player, ability.radius)) {
             const dx = entity.location.x - player.location.x;
             const dy = entity.location.y - player.location.y;
             const dz = entity.location.z - player.location.z;
-            const length = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
-            const dot = (dx * direction.x + dy * direction.y + dz * direction.z) / length;
+            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+            const dot = (dx * direction.x + dy * direction.y + dz * direction.z) / distance;
 
             if (dot > 0.45) {
-                entity.applyDamage(Math.round(ability.damage * power));
-                try {
-                    entity.addEffect("slowness", 40, {
-                        amplifier: 1,
-                        showParticles: true
-                    });
-                } catch {}
+                safelyDamage(entity, Math.round(ability.damage * power));
+                safelyAddEffect(entity, "slowness", 40, 1);
             }
         }
-
         player.sendMessage("§bThunder Call unleashed!");
-    }
-
-    if (itemId === "arcane:void_dagger") {
-        player.addEffect("invisibility", 80, {
-            amplifier: 0,
-            showParticles: false
-        });
-        player.addEffect("speed", 80, {
-            amplifier: 2,
-            showParticles: true
-        });
+    } else if (itemId === "arcane:void_dagger") {
+        safelyAddEffect(player, "invisibility", 80, 0, false);
+        safelyAddEffect(player, "speed", 80, 2);
         player.sendMessage("§5Void Veil activated!");
-    }
-
-    if (itemId === "arcane:gravity_maul") {
+    } else if (itemId === "arcane:gravity_maul") {
         for (const entity of nearbyEntities(player, ability.radius)) {
-            entity.applyDamage(Math.round(ability.damage * power));
-            try {
-                entity.addEffect("slowness", 80, {
-                    amplifier: 3,
-                    showParticles: true
-                });
-            } catch {}
+            safelyDamage(entity, Math.round(ability.damage * power));
+            safelyAddEffect(entity, "slowness", 80, 3);
         }
         player.sendMessage("§8Gravity Slam unleashed!");
-    }
-
-    if (itemId === "arcane:lifebloom_staff") {
-        player.addEffect("regeneration", 160, {
-            amplifier: 2,
-            showParticles: true
-        });
-        player.addEffect("absorption", 160, {
-            amplifier: 0,
-            showParticles: true
-        });
+    } else if (itemId === "arcane:lifebloom_staff") {
+        safelyAddEffect(player, "regeneration", 160, 2);
+        safelyAddEffect(player, "absorption", 160, 0);
         player.sendMessage("§aLifebloom activated!");
     }
 }
@@ -235,9 +215,15 @@ world.afterEvents.itemUse.subscribe(event => {
     if (!player || player.typeId !== "minecraft:player" || !item) return;
 
     if (item.typeId === "arcane:mana_crystal") {
+        const missingMana = maxMana(player) - mana(player);
+        if (missingMana <= 0) {
+            player.sendMessage("§bYour mana is already full.");
+            return;
+        }
         if (!consumeOne(player, item.typeId)) return;
-        const restored = Math.min(65, maxMana(player) - mana(player));
-        setMana(player, mana(player) + 65);
+
+        const restored = Math.min(65, missingMana);
+        setMana(player, mana(player) + restored);
         player.sendMessage(`§bMana Crystal used. Restored ${restored} mana.`);
         return;
     }
@@ -260,15 +246,6 @@ world.afterEvents.entityDie.subscribe(event => {
     if (!dead || dead.typeId === "minecraft:player") return;
 
     giveXP(killer, 15);
-
-    if (Math.random() < 0.20) {
-        try {
-            dead.dimension.spawnItem(
-                new ItemStack("arcane:arcane_essence", 1),
-                dead.location
-            );
-        } catch {}
-    }
 });
 
 system.runInterval(() => {
@@ -276,27 +253,22 @@ system.runInterval(() => {
         const current = mana(player);
         const maximum = maxMana(player);
 
-        if (current < maximum) {
-            setMana(player, current + 2);
-        }
+        if (current < maximum) setMana(player, current + 2);
 
         const currentLevel = level(player);
         const currentXP = getNumber(player, "arcane:xp", 0);
+        const needed = xpNeeded(currentLevel);
         const barLength = 10;
-        const filled = Math.min(
-            barLength,
-            Math.floor((currentXP / xpNeeded(currentLevel)) * barLength)
-        );
+        const filled = Math.min(barLength, Math.floor((currentXP / needed) * barLength));
         const bar = "§a" + "▰".repeat(filled) + "§8" + "▱".repeat(barLength - filled);
 
         player.onScreenDisplay.setActionBar(
-            `§bMana ${mana(player)}/${maximum} §8| §6Lv.${currentLevel} §8| ${bar} §f${currentXP}/${xpNeeded(currentLevel)} XP`
+            `§bMana ${mana(player)}/${maximum} §8| §6Lv.${currentLevel} §8| ${bar} §f${currentXP}/${needed} XP`
         );
     }
 }, 20);
 
-
- // Show mob health while a player is looking directly at it.
+// Show a temporary health label for the mob a player is looking at.
 const healthNameTags = new Map();
 
 system.runInterval(() => {
@@ -328,7 +300,10 @@ system.runInterval(() => {
         try {
             let saved = healthNameTags.get(id);
             if (!saved) {
-                saved = { entity: viewed.entity, originalNameTag: viewed.entity.nameTag };
+                saved = {
+                    entity: viewed.entity,
+                    originalNameTag: viewed.entity.nameTag
+                };
                 healthNameTags.set(id, saved);
             }
 
@@ -342,4 +317,3 @@ system.runInterval(() => {
 }, 5);
 
 console.warn("[Arcane Arsenal] Gameplay system loaded.");
-

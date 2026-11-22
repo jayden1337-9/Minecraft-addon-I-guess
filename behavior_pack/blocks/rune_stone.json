@@ -10,6 +10,9 @@
       },
       "minecraft:map_color": "#3E647A",
       "minecraft:loot": "loot_tables/blocks/rune_stone.json",
+      "minecraft:menu_category": {
+        "category": "construction"
+      },
       "minecraft:material_instances": {
         "*": {
           "texture": "rune_stone",

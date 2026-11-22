@@ -14,7 +14,14 @@
         "value": "Mana Crystal"
       },
       "minecraft:max_stack_size": 16,
-      "minecraft:hand_equipped": false
+      "minecraft:hand_equipped": false,
+      "minecraft:menu_category": {
+        "category": "items"
+      },
+      "minecraft:use_modifiers": {
+        "use_duration": 0.1,
+        "movement_modifier": 1
+      }
     }
   }
 }
