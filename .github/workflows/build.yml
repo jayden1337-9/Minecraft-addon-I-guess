@@ -107,8 +107,11 @@ jobs:
 
           with ZipFile("dist/ArcaneArsenal.mcaddon") as z:
               names = set(z.namelist())
-              assert "ArcaneArsenal_BP/manifest.json" in names
-              assert "ArcaneArsenal_RP/manifest.json" in names
+              assert names == {"ArcaneArsenal_BP.mcpack", "ArcaneArsenal_RP.mcpack"}, f"unexpected mcaddon contents: {sorted(names)}"
+              for pack_name in names:
+                  with ZipFile(z.open(pack_name)) as pack:
+                      assert "manifest.json" in pack.namelist(), f"{pack_name}: missing root manifest.json"
+                      assert pack.testzip() is None, f"{pack_name}: corrupt member"
               bad = z.testzip()
               assert bad is None, f"mcaddon: corrupt member {bad}"
 
